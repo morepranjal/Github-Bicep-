@@ -1,0 +1,47 @@
+name: Deploy Bicep to Azure
+ 
+on:
+  workflow_dispatch:
+ 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+ 
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+ 
+    - name: Azure Login
+      env:
+        AZURE_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+        AZURE_TENANT_ID: ${{ secrets.TENANT_ID }}
+        AZURE_CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+      run: |
+        az login --service-principal \
+          --username $CLIENT_ID \
+          --password $CLIENT_SECRET \
+          --tenant $TENANT_ID
+ 
+    - name: Set Azure Subscription
+      env:
+        AZURE_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
+      run: |
+        az account set --subscription $SUBSCRIPTION_ID
+ 
+    - name: Deploy Bicep File
+      env:
+        AZURE_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
+      run: |
+        RESOURCE_GROUP="bicep-rg"
+        LOCATION="eastus"
+ 
+        # Create the resource group if it doesn't exist
+        az group create --name $RESOURCE_GROUP --location $LOCATION
+ 
+        # Deploy the Bicep template
+        az deployment group create \
+          --resource-group $RESOURCE_GROUP \
+          --template-file main.bicep \
+          --parameters @parameter.jsonc
+
+        
